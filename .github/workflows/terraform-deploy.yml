@@ -133,3 +133,103 @@ jobs:
           commit_author: veecode-bot<github-admin@vee.codes>
           commit_message: "Update catalog-info.yaml with RDS endpoint"
           push_options: '--force'
+
+  obs-apply:
+    runs-on: ubuntu-latest
+    needs: kubeconfig
+    steps:
+      - uses: actions/checkout@v3
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY}}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_KEY}}
+          aws-region: ${{ secrets.AWS_REGION}}
+        
+    ### Usin k8s context
+      - name: Download kubeconfig artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: kube-config
+          path: ~/.kube
+
+      - name: Install Helm
+        run: |
+          curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+          helm version
+
+      - name: Add OpenTelemetry Helm repository
+        run: |
+          helm repo add opentelemetry-helm https://open-telemetry.github.io/opentelemetry-helm-charts
+          helm repo update
+  
+      - name: Install OpenTelemetry Collector
+        run: |
+          helm upgrade --install opentelemetry-operator opentelemetry-helm/opentelemetry-operator --wait --version 0.63.1 -n vkpr --create-namespace \
+            --set manager.collectorImage.repository=otel/opentelemetry-collector-k8s \
+            --set admissionWebhooks.certManager.enabled=false \
+            --set admissionWebhooks.autoGenerateCert.enabled=true           
+
+      - name: Apply OpenTelemetry Collector configuration
+        run: |
+          sleep 5
+          kubectl apply -f - <<EOF
+          apiVersion: opentelemetry.io/v1beta1
+          kind: OpenTelemetryCollector
+          metadata:
+            name: otel
+            namespace: vkpr
+          spec:
+            config:
+              receivers:
+                otlp:
+                  protocols:
+                    grpc:
+                      endpoint: 0.0.0.0:4317
+                    http:
+                      endpoint: 0.0.0.0:4318
+              processors:
+                memory_limiter:
+                  check_interval: 1s
+                  limit_percentage: 75
+                  spike_limit_percentage: 15
+                batch:
+                  send_batch_size: 10000
+                  timeout: 10s
+              exporters:
+                otlp:
+                  endpoint: 34.231.125.112:30003
+                  tls:
+                    insecure: true
+              service:
+                pipelines:
+                  traces:
+                    receivers: [otlp]
+                    processors: [memory_limiter, batch]
+                    exporters: [otlp/jaeger]
+          EOF
+
+      - name: Apply OpenTelemetry auto-instrumentation
+        run: |
+          sleep 5        
+          kubectl apply -f instrumentation.yaml -n vkpr            
+
+      - name: Add Prometheus-stack Helm repository
+        run: |
+          helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+          helm repo update
+
+      - name: Install Prometheus-stack 
+        run: |
+          helm upgrade --install prometheus-stack prometheus-community/kube-prometheus-stack --version 55.5.0 -n vkpr -f prometheus-stack.yml --create-namespace
+
+      - name: Add Loki Helm repository
+        run: |
+          helm repo add grafana https://grafana.github.io/helm-charts
+          helm repo update
+
+      - name: Install Loki Promtail
+        run: |
+          helm upgrade --install loki grafana/loki-stack --version 2.9.11 -f loki.yml -n vkpr --create-namespace
+
+                  

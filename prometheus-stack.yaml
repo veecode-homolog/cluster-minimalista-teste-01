@@ -1,0 +1,32 @@
+alertmanager:
+  enabled: false
+  ingress:
+    enabled: false
+grafana:
+  enabled: false
+prometheus:
+  enabled: true
+  ingress:
+    enabled: false
+  prometheusSpec:
+    enableRemoteWriteReceiver: true
+    externalLabels:
+      label: lalabel
+      cluster: cluster-minimalista-teste-01
+      replacement: platform_bfuzq_$1
+    remoteWrite:
+    - name: prometheus-central
+      sendExemplars: true
+      url: http://34.231.125.112:30002/api/v1/write
+      writeRelabelConfigs:
+      - regex: (.+)
+        replacement: platform_minimalista_$1
+        sourceLabels:
+        - __name__
+        targetLabel: __name__
+    scrapeInterval: 10s
+prometheus-node-exporter:
+  hostRootFsMount:
+    enabled: false
+prometheusOperator:
+  enabled: true
