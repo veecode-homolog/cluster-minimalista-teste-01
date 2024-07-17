@@ -221,7 +221,7 @@ jobs:
 
       - name: Install Prometheus-stack 
         run: |
-          helm upgrade --install prometheus-stack prometheus-community/kube-prometheus-stack --version 55.5.0 -n vkpr -f prometheus-stack.yml --create-namespace
+          helm upgrade --install prometheus-stack prometheus-community/kube-prometheus-stack --version 55.5.0 -n vkpr -f prometheus-stack.yaml --create-namespace
 
       - name: Add Loki Helm repository
         run: |
@@ -230,6 +230,6 @@ jobs:
 
       - name: Install Loki Promtail
         run: |
-          helm upgrade --install loki grafana/loki-stack --version 2.9.11 -f loki.yml -n vkpr --create-namespace
+          helm upgrade --install loki grafana/loki-stack --version 2.9.11 -f loki.yaml -n vkpr --create-namespace
 
                   
