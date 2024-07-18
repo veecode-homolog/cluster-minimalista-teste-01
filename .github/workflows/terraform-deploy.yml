@@ -171,7 +171,8 @@ jobs:
         run: |
             kubectl apply -f kong-acme.yaml -n vkpr    
             kubectl apply -f kong-plugin-basicauth.yaml -n vkpr    
-
+            kubectl apply -f kong-plugin-prometheus.yaml -n vkpr    
+            kubectl apply -f kong-plugin-otlp.yaml -n vkpr    
 
       - name: Add OpenTelemetry Helm repository
         run: |
