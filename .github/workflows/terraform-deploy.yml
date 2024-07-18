@@ -165,7 +165,7 @@ jobs:
   
       - name: Install Kong
         run: |
-          helm upgrade --install kong kong/kong --version 2.39.3 -f kong.yaml -n vkpr
+          helm upgrade --install kong kong/kong --version 2.39.3 -f kong.yaml -n vkpr --create-namespace
       
       - name: Apply Kong Plugins
         run: |
