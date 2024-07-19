@@ -158,6 +158,15 @@ jobs:
           curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
           helm version
 
+      - name: Add Postgresql Helm repository
+        run: |
+          helm repo add bitnami https://charts.bitnami.com/bitnami
+          helm repo update
+    
+      - name: Install Postgresql
+        run: |
+          helm upgrade --install postgresql bitnami/postgresql --version 15.5.17 -f postgres.yaml -n vkpr --create-namespace
+        
       - name: Add Kong Helm repository
         run: |
           helm repo add kong https://charts.konghq.com

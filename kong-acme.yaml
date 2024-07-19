@@ -7,5 +7,7 @@ metadata:
  labels:
    global: "true"
 config:
- account_email: example@example.com
+  allow_any_domain: true
+  account_email: example@example.com
+  api_uri: https://acme-staging-v02.api.letsencrypt.org/directory
 plugin: acme
