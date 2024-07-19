@@ -257,13 +257,5 @@ jobs:
         run: |
           helm upgrade --install loki grafana/loki-stack --version 2.9.11 -f loki.yaml -n vkpr --create-namespace
       
-      - name: Check Ingress
-        run: |
-          kubectl get ingress -A -o=jsonpath='{range .items[*]}{.spec.rules[*].host}{"\n"}{end}' | \
-          while read -r host; do
-              echo "Host: $host"
-              curl -I -L "$host"
-              echo "------------------------------------"
-          done
                     
                   
